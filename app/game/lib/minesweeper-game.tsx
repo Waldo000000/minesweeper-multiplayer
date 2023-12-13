@@ -97,7 +97,7 @@ export class MinesweeperGame {
 
     revealCell = (row: number, col: number) => {
         const cell = this.state.board[row][col];
-        if (!cell.isRevealed) {
+        if (!cell.isFlagged && !cell.isRevealed) {
             cell.isRevealed = true;
 
             if (cell.neighbouringMines === 0) {

@@ -12,15 +12,13 @@ export interface CellProps {
 
 const Cell: React.FC<CellProps> = ({ neighbouringMines, isMine, isRevealed, isFlagged, onClick, onRightClick }) => {
   const handleClick = () => {
-    if (!isFlagged && !isRevealed) {
-      onClick();
-    }
+    onClick();
   };
 
   const handleRightClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (!isRevealed) {
-      onRightClick(e);
+    onRightClick(e);
+  };
     }
   };
 
