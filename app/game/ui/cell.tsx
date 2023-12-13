@@ -33,9 +33,6 @@ const Cell: React.FC<CellProps> = ({ neighbouringMines, isMine, isRevealed, isFl
       if (deltaY < -20) {
         // Treat a swipe up as a right click
         onRightClick(e);
-      } else {
-        // Treat tap as a click
-        onClick();
       }
       setStartY(null);
     }
