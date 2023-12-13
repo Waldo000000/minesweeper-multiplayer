@@ -29,7 +29,7 @@ export class MinesweeperGame {
             board: this.createBoard()
         };
         this.placeMines();
-        this.calculateneighbouringMines();
+        this.calculateNeighbouringMines();
         this.onStateChanged();
     }
 
@@ -66,7 +66,7 @@ export class MinesweeperGame {
         }
     }
 
-    private calculateneighbouringMines(): void {
+    private calculateNeighbouringMines(): void {
         for (let row = 0; row < this.rows; row++) {
             for (let col = 0; col < this.cols; col++) {
                 if (!this.state.board[row][col].isMine) {

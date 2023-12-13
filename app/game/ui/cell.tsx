@@ -32,9 +32,11 @@ const Cell: React.FC<CellProps> = ({ neighbouringMines, isMine, isRevealed, isFl
     >
       {!isRevealed && !isFlagged && '⬜'}
       {!isRevealed && isFlagged && '🚩'}
-      {isRevealed && !isMine && neighbouringMines === 0 && '⬛'}
-      {isRevealed && !isMine && neighbouringMines !== 0 && neighbouringMines}
-      {isRevealed && isMine && '💥'}
+      {isRevealed && !isFlagged && !isMine && neighbouringMines === 0 && '⬛'}
+      {isRevealed && !isFlagged && !isMine && neighbouringMines !== 0 && neighbouringMines}
+      {isRevealed && !isFlagged && isMine && '💥'}
+      {isRevealed && isFlagged && !isMine &&  '❌'}
+      {isRevealed && isFlagged && isMine && '🚩'}
     </div>
   );
 };
