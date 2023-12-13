@@ -16,7 +16,7 @@ export class MinesweeperGame {
     private cols: number;
     private totalMines: number;
     private onStateChangeCallback: (state: State) => void;
-    
+
     private state: State;
 
     constructor(rows: number, cols: number, totalMines: number, onStateChangeCallback: (state: State) => void) {
@@ -98,7 +98,15 @@ export class MinesweeperGame {
     revealCell = (row: number, col: number) => {
         const cell = this.state.board[row][col];
         if (!cell.isRevealed) {
+            let cellsRevealed = [cell];
+
             cell.isRevealed = true;
+
+            if (cell.neighbouringMines === 0) {
+                // Recursively reveal neighboring empty cells
+                this.revealNeighbors(row, col);
+            }
+
             if (cell.isMine) {
                 this.revealAll();
             }
@@ -114,6 +122,30 @@ export class MinesweeperGame {
         this.onStateChanged();
     }
 
+    private revealNeighbors(row: number, col: number) {
+        const directions = [
+            { row: -1, col: 0 },
+            { row: 1, col: 0 },
+            { row: 0, col: -1 },
+            { row: 0, col: 1 },
+            { row: 1, col: 1 },
+            { row: -1, col: -1 },
+        ];
+
+        for (const direction of directions) {
+            const newRow = row + direction.row;
+            const newCol = col + direction.col;
+
+            if (this.isValidCell(newRow, newCol)) {
+                this.revealCell(newRow, newCol);
+            }
+        }
+    }
+
+    private isValidCell(row: number, col: number): boolean {
+        return row >= 0 && row < this.state.board.length && col >= 0 && col < this.state.board[0].length;
+    }
+
     private revealAll(): void {
         this.state.board.forEach((row) => {
             row.forEach((cell) => {
@@ -122,8 +154,8 @@ export class MinesweeperGame {
         });
         this.onStateChanged();
     }
-    
+
     private onStateChanged() {
-        this.onStateChangeCallback({...this.state});
+        this.onStateChangeCallback({ ...this.state });
     }
 }
