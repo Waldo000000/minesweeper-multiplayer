@@ -14,7 +14,7 @@ const Grid: React.FC<GridProps> = ({ board, onCellClick, onCellRightClick }) => 
   return (
     <div className="grid">
       {board.map((row, rowIndex) => (
-        <div key={rowIndex} className="row flex">
+        <div key={rowIndex} className="row flex items-center h-8 text-2xl">
           {row.map((cell, colIndex) => (
             <DynamicCell
               key={`${rowIndex}-${colIndex}`}

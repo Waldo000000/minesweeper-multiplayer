@@ -43,7 +43,7 @@ const Cell: React.FC<CellProps> = ({ neighbouringMines, isMine, isRevealed, isFl
 
   return (
     <div
-      className={`w-8 select-none cursor-default text-center cell ${isRevealed ? 'revealed' : ''} ${isFlagged ? 'flagged' : ''}`}
+      className={`w-8 align-middle select-none p-0 cursor-default text-center cell ${isRevealed ? 'revealed' : ''} ${isFlagged ? 'flagged' : ''}`}
       onClick={handleClick}
       onContextMenu={handleRightClick}
       onTouchStart={handleTouchStart}
@@ -54,7 +54,7 @@ const Cell: React.FC<CellProps> = ({ neighbouringMines, isMine, isRevealed, isFl
       {isRevealed && !isFlagged && !isMine && neighbouringMines === 0 && '⬛'}
       {isRevealed && !isFlagged && !isMine && neighbouringMines !== 0 && neighbouringMines}
       {isRevealed && !isFlagged && isMine && '💥'}
-      {isRevealed && isFlagged && !isMine &&  '❌'}
+      {isRevealed && isFlagged && !isMine && '❌'}
       {isRevealed && isFlagged && isMine && '🚩'}
     </div>
   );
