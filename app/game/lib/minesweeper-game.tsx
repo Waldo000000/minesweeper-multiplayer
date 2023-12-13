@@ -98,8 +98,6 @@ export class MinesweeperGame {
     revealCell = (row: number, col: number) => {
         const cell = this.state.board[row][col];
         if (!cell.isRevealed) {
-            let cellsRevealed = [cell];
-
             cell.isRevealed = true;
 
             if (cell.neighbouringMines === 0) {
@@ -124,12 +122,14 @@ export class MinesweeperGame {
 
     private revealNeighbors(row: number, col: number) {
         const directions = [
+            { row: -1, col: -1 },
             { row: -1, col: 0 },
-            { row: 1, col: 0 },
+            { row: -1, col: 1 },
             { row: 0, col: -1 },
             { row: 0, col: 1 },
-            { row: 1, col: 1 },
-            { row: -1, col: -1 },
+            { row: 1, col: -1 },
+            { row: 1, col: 0 },
+            { row: 1, col: 1 }
         ];
 
         for (const direction of directions) {
