@@ -5,7 +5,7 @@ export default function Page() {
   return (
     <div>
       <h1>Minesweeper Game</h1>
-      <Game></Game>
+      <Game nRows={8} nCols={8} nMines={10}></Game>
     </div>
   );
 };
