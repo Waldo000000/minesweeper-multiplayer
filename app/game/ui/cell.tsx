@@ -1,5 +1,5 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 
 export interface CellProps {
   isMine: boolean;
@@ -7,10 +7,13 @@ export interface CellProps {
   isFlagged: boolean;
   neighbouringMines: number;
   onClick: () => void;
-  onRightClick: (e: React.MouseEvent) => void;
+  onRightClick: (e: React.MouseEvent | React.TouchEvent) => void;
 }
 
 const Cell: React.FC<CellProps> = ({ neighbouringMines, isMine, isRevealed, isFlagged, onClick, onRightClick }) => {
+
+  const [startY, setStartY] = useState<number | null>(null);
+
   const handleClick = () => {
     onClick();
   };
@@ -19,6 +22,22 @@ const Cell: React.FC<CellProps> = ({ neighbouringMines, isMine, isRevealed, isFl
     e.preventDefault();
     onRightClick(e);
   };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setStartY(e.touches[0].clientY);
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (startY !== null) {
+      const deltaY = e.changedTouches[0].clientY - startY;
+      if (deltaY < -20) {
+        // Treat a swipe up as a right click
+        onRightClick(e);
+      } else {
+        // Treat tap as a click
+        onClick();
+      }
+      setStartY(null);
     }
   };
 
@@ -27,6 +46,8 @@ const Cell: React.FC<CellProps> = ({ neighbouringMines, isMine, isRevealed, isFl
       className={`w-8 cursor-default text-center cell ${isRevealed ? 'revealed' : ''} ${isFlagged ? 'flagged' : ''}`}
       onClick={handleClick}
       onContextMenu={handleRightClick}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
       {!isRevealed && !isFlagged && '⬜'}
       {!isRevealed && isFlagged && '🚩'}
