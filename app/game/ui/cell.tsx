@@ -43,7 +43,7 @@ const Cell: React.FC<CellProps> = ({ neighbouringMines, isMine, isRevealed, isFl
 
   return (
     <div
-      className={`w-8 cursor-default text-center cell ${isRevealed ? 'revealed' : ''} ${isFlagged ? 'flagged' : ''}`}
+      className={`w-8 select-none cursor-default text-center cell ${isRevealed ? 'revealed' : ''} ${isFlagged ? 'flagged' : ''}`}
       onClick={handleClick}
       onContextMenu={handleRightClick}
       onTouchStart={handleTouchStart}
