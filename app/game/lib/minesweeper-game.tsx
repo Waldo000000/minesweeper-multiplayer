@@ -106,7 +106,7 @@ export class MinesweeperGame {
             }
 
             if (cell.isMine) {
-                this.revealAll();
+                this.forceRevealAll();
             }
         }
         this.onStateChanged();
@@ -146,7 +146,7 @@ export class MinesweeperGame {
         return row >= 0 && row < this.state.board.length && col >= 0 && col < this.state.board[0].length;
     }
 
-    private revealAll(): void {
+    private forceRevealAll(): void {
         this.state.board.forEach((row) => {
             row.forEach((cell) => {
                 cell.isRevealed = true;
