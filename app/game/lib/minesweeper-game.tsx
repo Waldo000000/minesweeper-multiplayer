@@ -11,7 +11,34 @@ export type State = {
     board: Board;
 };
 
+export type MinesweeperEvent = CellsRevealedEvent | CellFlaggedEvent | CellUnflaggedEvent | GameLostEvent;
+
+export type Coord = { row: number; col: number };
+
+export type CellsRevealedEvent = {
+    type: 'cellsRevealed';
+    cells: Coord[];
+};
+
+export type CellFlaggedEvent = {
+    type: 'cellFlagged';
+    row: number;
+    col: number;
+};
+
+export type CellUnflaggedEvent = {
+    type: 'cellUnflagged';
+    row: number;
+    col: number;
+};
+
+export type GameLostEvent = {
+    type: 'gameLost';
+};
+
 export class MinesweeperGame {
+    private eventQueue: MinesweeperEvent[] = [];
+
     private rows: number;
     private cols: number;
     private totalMines: number;
@@ -97,19 +124,38 @@ export class MinesweeperGame {
 
     revealCell = (row: number, col: number) => {
         const cell = this.state.board[row][col];
-        if (!cell.isFlagged && !cell.isRevealed) {
-            cell.isRevealed = true;
+        const revealedCells = [{ row, col }];
 
-            if (cell.neighbouringMines === 0) {
-                // Recursively reveal neighboring empty cells
-                this.revealNeighbors(row, col);
-            }
+        // Queue additional events for revealing neighboring empty cells
+        if (cell.neighbouringMines === 0) {
+            this.addNeighborsToRevealedCells(revealedCells, row, col);
+        }
 
-            if (cell.isMine) {
-                this.forceRevealAll();
-            }
+        this.publishEvent({
+            type: 'cellsRevealed',
+            cells: revealedCells
+        });
+
+        if (cell.isMine) {
+            this.publishEvent({
+                type: 'gameLost'
+            });
         }
         this.onStateChanged();
+    }
+
+    private publishEvent(event: MinesweeperEvent): void {
+        this.eventQueue.push(event);
+        this.processEventQueue();
+    }
+
+    private processEventQueue(): void {
+        while (this.eventQueue.length > 0) {
+            const event = this.eventQueue.shift();
+            if (event) {
+                this.processEvent(event);
+            }
+        }
     }
 
     flagCell = (row: number, col: number) => {
@@ -120,7 +166,54 @@ export class MinesweeperGame {
         this.onStateChanged();
     }
 
-    private revealNeighbors(row: number, col: number) {
+    processEvent(event: MinesweeperEvent): void {
+        switch (event.type) {
+            case 'cellsRevealed':
+                this.processCellsRevealedEvent(event);
+                break;
+            case 'cellFlagged':
+                this.processCellFlaggedEvent(event);
+                break;
+            case 'cellUnflagged':
+                this.processCellUnflaggedEvent(event);
+                break;
+            case 'gameLost':
+                this.processGameLostEvent(event);
+                break;
+        }
+    }
+
+    private processCellsRevealedEvent(event: CellsRevealedEvent): void {
+        event.cells.forEach(({ row, col }) => {
+            const cell = this.state.board[row][col];
+            cell.isRevealed = true;
+            cell.isFlagged = false;
+        });
+    }
+
+    private processCellFlaggedEvent(event: CellFlaggedEvent): void {
+        const { row, col } = event;
+        this.toggleFlag(row, col, true);
+    }
+
+    private processCellUnflaggedEvent(event: CellUnflaggedEvent): void {
+        const { row, col } = event;
+        this.toggleFlag(row, col, false);
+    }
+
+    private processGameLostEvent(event: GameLostEvent): void {
+        this.forceRevealAll();
+    }
+
+    private toggleFlag(row: number, col: number, isFlagged: boolean): void {
+        const cell = this.state.board[row][col];
+        if (!cell.isRevealed) {
+            cell.isFlagged = isFlagged;
+            this.onStateChanged();
+        }
+    }
+
+    private addNeighborsToRevealedCells(revealedCells: Coord[], row: number, col: number) {
         const directions = [
             { row: -1, col: -1 },
             { row: -1, col: 0 },
@@ -131,13 +224,21 @@ export class MinesweeperGame {
             { row: 1, col: 0 },
             { row: 1, col: 1 }
         ];
-
+    
         for (const direction of directions) {
             const newRow = row + direction.row;
             const newCol = col + direction.col;
-
+    
             if (this.isValidCell(newRow, newCol)) {
-                this.revealCell(newRow, newCol);
+                const neighborCell = this.state.board[newRow][newCol];
+                if (!revealedCells.some((cell) => cell.row === newRow && cell.col === newCol)) {
+                    revealedCells.push({ row: newRow, col: newCol });
+
+                    // Recursively add neighbors for empty cells
+                    if (neighborCell.neighbouringMines === 0) {
+                        this.addNeighborsToRevealedCells(revealedCells, newRow, newCol);
+                    }
+                }
             }
         }
     }

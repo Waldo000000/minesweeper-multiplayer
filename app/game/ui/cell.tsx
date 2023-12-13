@@ -15,12 +15,16 @@ const Cell: React.FC<CellProps> = ({ neighbouringMines, isMine, isRevealed, isFl
   const [startY, setStartY] = useState<number | null>(null);
 
   const handleClick = () => {
-    onClick();
+    if (!isRevealed && !isFlagged) {
+      onClick();
+    }
   };
 
   const handleRightClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    onRightClick(e);
+    if (!isRevealed) {
+      onRightClick(e);
+    }
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
