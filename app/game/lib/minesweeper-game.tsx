@@ -1,3 +1,10 @@
+export interface GameConfig {
+    nRows: number;
+    nCols: number;
+    nMines: number;
+    minePlacements: Coord[];
+}
+
 export type Cell = {
     isMine: boolean;
     isRevealed: boolean;
@@ -37,25 +44,20 @@ export type GameLostEvent = {
 };
 
 export class MinesweeperGame {
-    private eventQueue: MinesweeperEvent[] = [];
+    private config: GameConfig;
 
-    private rows: number;
-    private cols: number;
-    private totalMines: number;
+    private eventQueue: MinesweeperEvent[] = [];
+    private state: State;
     private onStateChangeCallback: (state: State) => void;
 
-    private state: State;
-
-    constructor(rows: number, cols: number, totalMines: number, onStateChangeCallback: (state: State) => void) {
-        this.rows = rows;
-        this.cols = cols;
-        this.totalMines = totalMines;
+    constructor(config: GameConfig, onStateChangeCallback: (state: State) => void) {
         this.onStateChangeCallback = onStateChangeCallback;
 
+        this.config = config;
         this.state = {
             board: this.createBoard()
         };
-        this.placeMines();
+        this.placeMinesOnBoard(config.minePlacements);
         this.calculateNeighbouringMines();
         this.onStateChanged();
     }
@@ -63,9 +65,9 @@ export class MinesweeperGame {
     private createBoard(): Board {
         const board: Board = [];
 
-        for (let row = 0; row < this.rows; row++) {
+        for (let row = 0; row < this.config.nRows; row++) {
             const newRow: Cell[] = [];
-            for (let col = 0; col < this.cols; col++) {
+            for (let col = 0; col < this.config.nCols; col++) {
                 newRow.push({
                     isMine: false,
                     isRevealed: false,
@@ -79,23 +81,31 @@ export class MinesweeperGame {
         return board;
     }
 
-    private placeMines(): void {
-        let minesToPlace = this.totalMines;
+    public static CreateMinePlacements(nRows: number, nCols: number, nMines: number): Coord[] {
+        const mineCoords: Coord[] = [];
+        for (let i = 0; i < nMines; i++) {
 
-        while (minesToPlace > 0) {
-            const randomRow = Math.floor(Math.random() * this.rows);
-            const randomCol = Math.floor(Math.random() * this.cols);
+            let row: number, col: number;
+            do {
+                row = Math.floor(Math.random() * nRows);
+                col = Math.floor(Math.random() * nCols);
+            } while (mineCoords.some((coord) => coord.row === row && coord.col === col));
 
-            if (!this.state.board[randomRow][randomCol].isMine) {
-                this.state.board[randomRow][randomCol].isMine = true;
-                minesToPlace--;
-            }
+            mineCoords.push({row: row, col: col});
         }
+        return mineCoords;
+    }
+
+    private placeMinesOnBoard(minePlacements: Coord[]): void {
+        for (const placement of minePlacements) {
+            const { row, col } = placement;
+            this.state.board[row][col].isMine = true;
+          }
     }
 
     private calculateNeighbouringMines(): void {
-        for (let row = 0; row < this.rows; row++) {
-            for (let col = 0; col < this.cols; col++) {
+        for (let row = 0; row < this.config.nRows; row++) {
+            for (let col = 0; col < this.config.nCols; col++) {
                 if (!this.state.board[row][col].isMine) {
                     let count = 0;
 
@@ -106,9 +116,9 @@ export class MinesweeperGame {
 
                             if (
                                 newRow >= 0 &&
-                                newRow < this.rows &&
+                                newRow < this.config.nRows &&
                                 newCol >= 0 &&
-                                newCol < this.cols &&
+                                newCol < this.config.nCols &&
                                 this.state.board[newRow][newCol].isMine
                             ) {
                                 count++;
@@ -224,11 +234,11 @@ export class MinesweeperGame {
             { row: 1, col: 0 },
             { row: 1, col: 1 }
         ];
-    
+
         for (const direction of directions) {
             const newRow = row + direction.row;
             const newCol = col + direction.col;
-    
+
             if (this.isValidCell(newRow, newCol)) {
                 const neighborCell = this.state.board[newRow][newCol];
                 if (!revealedCells.some((cell) => cell.row === newRow && cell.col === newCol)) {
