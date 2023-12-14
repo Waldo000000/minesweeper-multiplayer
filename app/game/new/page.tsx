@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { createClient } from "@supabase/supabase-js";
 import { MinesweeperGame } from '../lib/minesweeper-game';
+import supabaseClient from '../lib/supabase-client';
 
 
 export default function CreateGamePage() {
@@ -35,20 +36,16 @@ export default function CreateGamePage() {
 // Function to create a new game
 async function createNewGame(nRows: number, nCols: number, nMines: number) {
 
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
     const minePlacements = MinesweeperGame.CreateMinePlacements(nRows, nCols, nMines);
-    const { data: gameData, error: gameError } = await supabase.from('games').insert([
-        {
+    const { data: gameData, error: gameError } = await supabaseClient
+        .from('games')
+        .insert([{
             n_rows: nRows,
             n_cols: nCols,
             n_mines: nMines,
             mine_placements: minePlacements
-        },
-    ]).select();
+        }])
+        .select();
 
     if (gameError) {
         throw new Error(`Failed to create game: {gameError}`);

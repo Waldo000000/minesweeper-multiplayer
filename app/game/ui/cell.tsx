@@ -6,24 +6,24 @@ export interface CellProps {
   isRevealed: boolean;
   isFlagged: boolean;
   neighbouringMines: number;
-  onClick: () => void;
-  onRightClick: (e: React.MouseEvent | React.TouchEvent) => void;
+  onRevealClick: () => void;
+  onToggleFlagClick: () => void;
 }
 
-const Cell: React.FC<CellProps> = ({ neighbouringMines, isMine, isRevealed, isFlagged, onClick, onRightClick }) => {
+const Cell: React.FC<CellProps> = ({ neighbouringMines, isMine, isRevealed, isFlagged, onRevealClick, onToggleFlagClick }) => {
 
   const [startY, setStartY] = useState<number | null>(null);
 
   const handleClick = () => {
     if (!isRevealed && !isFlagged) {
-      onClick();
+      onRevealClick();
     }
   };
 
   const handleRightClick = (e: React.MouseEvent) => {
-    e.preventDefault();
     if (!isRevealed) {
-      onRightClick(e);
+      e.preventDefault();
+      onToggleFlagClick();
     }
   };
 
@@ -35,8 +35,9 @@ const Cell: React.FC<CellProps> = ({ neighbouringMines, isMine, isRevealed, isFl
     if (startY !== null) {
       const deltaY = e.changedTouches[0].clientY - startY;
       if (deltaY < -20) {
-        // Treat a swipe up as a right click
-        onRightClick(e);
+        // On "swipe up", toggle flag
+        e.preventDefault();
+        onToggleFlagClick();
       }
       setStartY(null);
     }

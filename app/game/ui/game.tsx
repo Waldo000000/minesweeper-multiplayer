@@ -1,12 +1,23 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Grid from './grid';
-import { Coord, GameConfig, MinesweeperGame, State } from '../lib/minesweeper-game';
-import { createClient } from "@supabase/supabase-js";
+import { Coord, GameConfig, MinesweeperEvent, MinesweeperGame, State } from '../lib/minesweeper-game';
+import supabaseClient from '../lib/supabase-client';
+import { RealtimePostgresChangesPayload, RealtimePostgresInsertPayload } from '@supabase/supabase-js';
 
 interface GameProps {
     gameId: string;
 }
+
+type GameEventInsertRecord = {
+    event: MinesweeperEvent;
+    game_id: string;
+};
+
+type GameEventRecord = GameEventInsertRecord & {
+    id: number;
+    created_at: string;
+};
 
 const Game: React.FC<GameProps> = ({ gameId }) => {
     const [minesweeperGame, setMinesweeperGame] = useState<MinesweeperGame | null>(null);
@@ -15,14 +26,8 @@ const Game: React.FC<GameProps> = ({ gameId }) => {
     useEffect(() => {
         const fetchGameConfigFromSupabase = async (gameId: string): Promise<GameConfig> => {
 
-            const supabase = createClient(
-                process.env.NEXT_PUBLIC_SUPABASE_URL!,
-                process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-            );
-
             // TODO: Use React query for types
-
-            const configData = await supabase
+            const configData = await supabaseClient
                 .from('games')
                 .select()
                 .eq('game_id', gameId);
@@ -43,10 +48,36 @@ const Game: React.FC<GameProps> = ({ gameId }) => {
             };
         }
 
+        const publishToDatabase = async (event: MinesweeperEvent) => {
+            const record: GameEventInsertRecord = {
+                game_id: gameId,
+                event
+            };
+
+            await supabaseClient
+                .from('game_events')
+                .insert([record])
+                .throwOnError();
+        }
+
         const fetchGameConfig = async () => {
             const config = await fetchGameConfigFromSupabase(gameId);
 
-            const game = new MinesweeperGame(config, (state) => setState({ ...state }))
+            const game = new MinesweeperGame(config, (state) => setState({ ...state }), event => publishToDatabase(event))
+
+            const handlePayload = (payload: RealtimePostgresInsertPayload<GameEventRecord>) => {
+                game.processEvent(payload.new.event);
+            };
+
+            supabaseClient
+                .channel('game_events')
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'game_events',
+                    filter: `game_id=eq.${gameId}`,
+                }, handlePayload)
+                .subscribe();
 
             setMinesweeperGame(game);
         };
@@ -59,8 +90,8 @@ const Game: React.FC<GameProps> = ({ gameId }) => {
             <p>Game ID: {gameId}</p>
             <Grid
                 board={state?.board ?? []}
-                onCellClick={minesweeperGame?.revealCell || (() => { })}
-                onCellRightClick={minesweeperGame?.flagCell || (() => { })}
+                onRevealClick={minesweeperGame?.revealCell || (() => { })}
+                onToggleFlagClick={minesweeperGame?.toggleFlagCell || (() => { })}
             />
             <div className="mt-4">
                 <a

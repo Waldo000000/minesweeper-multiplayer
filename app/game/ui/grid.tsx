@@ -6,11 +6,11 @@ const DynamicCell = dynamic(() => import('./cell'), { ssr: false });
 
 interface GridProps {
   board: Cell[][];
-  onCellClick: (row: number, col: number) => void;
-  onCellRightClick: (row: number, col: number) => void;
+  onRevealClick: (row: number, col: number) => void;
+  onToggleFlagClick: (row: number, col: number) => void;
 }
 
-const Grid: React.FC<GridProps> = ({ board, onCellClick, onCellRightClick }) => {
+const Grid: React.FC<GridProps> = ({ board, onRevealClick, onToggleFlagClick }) => {
   return (
     <div className="grid">
       {board.map((row, rowIndex) => (
@@ -22,11 +22,8 @@ const Grid: React.FC<GridProps> = ({ board, onCellClick, onCellRightClick }) => 
               isMine={cell.isMine}
               isRevealed={cell.isRevealed}
               isFlagged={cell.isFlagged}
-              onClick={() => onCellClick(rowIndex, colIndex)}
-              onRightClick={(e) => {
-                e.preventDefault();
-                onCellRightClick(rowIndex, colIndex);
-              }}
+              onRevealClick={() => onRevealClick(rowIndex, colIndex)}
+              onToggleFlagClick={() => onToggleFlagClick(rowIndex, colIndex)}
             />
           ))}
         </div>

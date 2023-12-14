@@ -49,11 +49,14 @@ export class MinesweeperGame {
     private eventQueue: MinesweeperEvent[] = [];
     private state: State;
     private onStateChangeCallback: (state: State) => void;
+    private onPublishCallback: (event: MinesweeperEvent) => void;
 
-    constructor(config: GameConfig, onStateChangeCallback: (state: State) => void) {
-        this.onStateChangeCallback = onStateChangeCallback;
+    constructor(config: GameConfig, onStateChangeCallback: (state: State) => void, onPublishCallback: (event: MinesweeperEvent) => void) {
 
         this.config = config;
+        this.onStateChangeCallback = onStateChangeCallback;
+        this.onPublishCallback = onPublishCallback;
+
         this.state = {
             board: this.createBoard()
         };
@@ -91,7 +94,7 @@ export class MinesweeperGame {
                 col = Math.floor(Math.random() * nCols);
             } while (mineCoords.some((coord) => coord.row === row && coord.col === col));
 
-            mineCoords.push({row: row, col: col});
+            mineCoords.push({ row: row, col: col });
         }
         return mineCoords;
     }
@@ -100,7 +103,7 @@ export class MinesweeperGame {
         for (const placement of minePlacements) {
             const { row, col } = placement;
             this.state.board[row][col].isMine = true;
-          }
+        }
     }
 
     private calculateNeighbouringMines(): void {
@@ -151,32 +154,35 @@ export class MinesweeperGame {
                 type: 'gameLost'
             });
         }
-        this.onStateChanged();
+    }
+
+    toggleFlagCell = (row: number, col: number) => {
+        const cell = this.state.board[row][col];
+        if (!cell.isFlagged) {
+            this.publishEvent({
+                type: 'cellFlagged',
+                row,
+                col
+            });
+        }
+        else {
+            this.publishEvent({
+                type: 'cellUnflagged',
+                row,
+                col
+            });
+        }
     }
 
     private publishEvent(event: MinesweeperEvent): void {
-        this.eventQueue.push(event);
-        this.processEventQueue();
+        // Locally, process the event optimistically
+        this.processEvent(event);
+
+        // Broadcast the event (e.g. to all connected clients)
+        this.onPublishCallback(event);
     }
 
-    private processEventQueue(): void {
-        while (this.eventQueue.length > 0) {
-            const event = this.eventQueue.shift();
-            if (event) {
-                this.processEvent(event);
-            }
-        }
-    }
-
-    flagCell = (row: number, col: number) => {
-        const cell = this.state.board[row][col];
-        if (!cell.isRevealed) {
-            cell.isFlagged = !cell.isFlagged;
-        }
-        this.onStateChanged();
-    }
-
-    processEvent(event: MinesweeperEvent): void {
+    processEvent = (event: MinesweeperEvent) => {
         switch (event.type) {
             case 'cellsRevealed':
                 this.processCellsRevealedEvent(event);
@@ -191,6 +197,7 @@ export class MinesweeperGame {
                 this.processGameLostEvent(event);
                 break;
         }
+        this.onStateChanged();
     }
 
     private processCellsRevealedEvent(event: CellsRevealedEvent): void {
@@ -219,7 +226,6 @@ export class MinesweeperGame {
         const cell = this.state.board[row][col];
         if (!cell.isRevealed) {
             cell.isFlagged = isFlagged;
-            this.onStateChanged();
         }
     }
 
@@ -263,7 +269,6 @@ export class MinesweeperGame {
                 cell.isRevealed = true;
             });
         });
-        this.onStateChanged();
     }
 
     private onStateChanged() {
