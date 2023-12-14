@@ -241,7 +241,7 @@ export class MinesweeperGame {
 
             if (this.isValidCell(newRow, newCol)) {
                 const neighborCell = this.state.board[newRow][newCol];
-                if (!revealedCells.some((cell) => cell.row === newRow && cell.col === newCol)) {
+                if (!neighborCell.isFlagged && !revealedCells.some((cell) => cell.row === newRow && cell.col === newCol)) {
                     revealedCells.push({ row: newRow, col: newCol });
 
                     // Recursively add neighbors for empty cells
