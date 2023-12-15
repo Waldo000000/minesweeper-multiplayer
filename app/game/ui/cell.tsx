@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import { useState, Touch } from 'react';
 
 export interface CellProps {
   isMine: boolean;
@@ -12,7 +12,9 @@ export interface CellProps {
 
 const Cell: React.FC<CellProps> = ({ neighbouringMines, isMine, isRevealed, isFlagged, onRevealClick, onToggleFlagClick }) => {
 
-  const [startY, setStartY] = useState<number | null>(null);
+  // Track touch positions to detect swipes
+  const [touchStart, setTouchStart] = useState<Touch | null>(null);
+  const swipeMinDeltaThreshold = 20;
 
   const handleClick = () => {
     if (!isRevealed && !isFlagged) {
@@ -28,18 +30,20 @@ const Cell: React.FC<CellProps> = ({ neighbouringMines, isMine, isRevealed, isFl
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    setStartY(e.touches[0].clientY);
+    setTouchStart(e.touches[0]);
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (startY !== null) {
-      const deltaY = e.changedTouches[0].clientY - startY;
-      if (deltaY < -20) {
-        // On "swipe up", toggle flag
+    if (touchStart !== null) {
+      const deltaX = e.changedTouches[0].clientX - touchStart?.clientX;
+      const deltaY = e.changedTouches[0].clientY - touchStart?.clientY;
+      const isSwipeRight = deltaX > swipeMinDeltaThreshold;
+      const isSwipeUp = deltaY < -swipeMinDeltaThreshold;
+      if (isSwipeRight || isSwipeUp) {
         e.preventDefault();
         onToggleFlagClick();
       }
-      setStartY(null);
+      setTouchStart(null);
     }
   };
 
