@@ -114,7 +114,6 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
 
     return (
         <div>
-            <p>Game ID: {gameId}</p>
             <Grid
                 board={state?.board ?? []}
                 onRevealClick={minesweeperGame?.revealCell || (() => { })}
