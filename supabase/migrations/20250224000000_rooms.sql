@@ -4,6 +4,8 @@ create table if not exists rooms (
   current_game_id uuid not null references games(game_id)
 );
 
+alter table rooms disable row level security;
+
 do $$
 begin
   if not exists (
