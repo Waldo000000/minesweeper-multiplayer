@@ -29,3 +29,14 @@ export async function createNewGame(nRows: number, nCols: number, nMines: number
   if (!gameId) throw new Error('Failed to get game ID');
   return gameId;
 }
+
+export const createNewRoom = async (nRows: number, nCols: number, nMines: number): Promise<string> => {
+  const gameId = await createNewGame(nRows, nCols, nMines);
+  const { data } = await supabaseClient
+    .from('rooms')
+    .insert([{ current_game_id: gameId }])
+    .select('room_id')
+    .throwOnError()
+    .single();
+  return data!.room_id;
+};

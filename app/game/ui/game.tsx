@@ -9,6 +9,7 @@ import { GAME_MODES, GameMode, createNewGame } from '../lib/game-modes';
 
 interface GameProps {
     gameId: string;
+    onStartGame?: (nRows: number, nCols: number, nMines: number) => Promise<void>;
 }
 
 type GameEventInsertRecord = {
@@ -21,7 +22,7 @@ type GameEventRecord = GameEventInsertRecord & {
     created_at: string;
 };
 
-const Game: React.FC<GameProps> = ({ gameId }) => {
+const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
     const router = useRouter();
     const [minesweeperGame, setMinesweeperGame] = useState<MinesweeperGame | null>(null);
     const [state, setState] = useState<State | null>(null);
@@ -31,14 +32,22 @@ const Game: React.FC<GameProps> = ({ gameId }) => {
     const [customMines, setCustomMines] = useState('99');
 
     const handleSelectMode = async (mode: GameMode) => {
-        const newGameId = await createNewGame(mode.nRows, mode.nCols, mode.nMines);
-        router.push(`/game/${newGameId}`);
+        if (onStartGame) {
+            await onStartGame(mode.nRows, mode.nCols, mode.nMines);
+        } else {
+            const newGameId = await createNewGame(mode.nRows, mode.nCols, mode.nMines);
+            router.push(`/game/${newGameId}`);
+        }
     };
 
     const handleCustomSubmit = async () => {
-        const newGameId = await createNewGame(Number(customRows), Number(customCols), Number(customMines));
         setShowCustomForm(false);
-        router.push(`/game/${newGameId}`);
+        if (onStartGame) {
+            await onStartGame(Number(customRows), Number(customCols), Number(customMines));
+        } else {
+            const newGameId = await createNewGame(Number(customRows), Number(customCols), Number(customMines));
+            router.push(`/game/${newGameId}`);
+        }
     };
 
     useEffect(() => {
