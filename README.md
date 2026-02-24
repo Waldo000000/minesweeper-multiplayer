@@ -26,6 +26,8 @@ Co-op multiplayer Minesweeper. Share a room URL and play together — everyone s
 | Crash Out | 16×30 | 336 (~70%) |
 | Custom | any | any |
 
+Crash Out mode designed by Jude Wallace.
+
 ## Local development
 
 **Prerequisites:** Docker (for the local Supabase stack)
