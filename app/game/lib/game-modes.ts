@@ -11,7 +11,8 @@ export type GameMode = {
 
 export const GAME_MODES: GameMode[] = [
   { key: 'beginner', label: 'Beginner', nRows: 9,  nCols: 9,  nMines: 10 },
-  { key: 'expert',     label: 'Expert',     nRows: 16, nCols: 30, nMines: 99  },
+  { key: 'intermediate', label: 'Intermediate', nRows: 16, nCols: 16, nMines: 40  },
+  { key: 'expert',       label: 'Expert',       nRows: 16, nCols: 30, nMines: 99  },
   { key: 'crash-out', label: 'Crash Out', nRows: 16, nCols: 30, nMines: 336 },
 ];
 
