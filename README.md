@@ -1,6 +1,30 @@
 # Minesweeper Multiplayer
 
-A co-op multiplayer minesweeper game built with Next.js and Supabase. Share a game URL with friends to play together in real time.
+Co-op multiplayer Minesweeper. Share a room URL and play together — everyone sees the same board in real time.
+
+## Screenshots
+
+**Fresh board**
+![Fresh board](docs/screenshots/01-fresh-board.png)
+
+**Mid-game** — cleared region, numbered border, flags on deduced mines
+![Mid-game](docs/screenshots/02-mid-game.png)
+
+**Multiplayer: follow notification** — when a player starts a new game, others see a banner
+![Follow banner](docs/screenshots/03-follow-banner.png)
+
+**Game over** — Crash Out mode (70% mine density)
+![Game over](docs/screenshots/05-game-over.png)
+
+## Difficulty modes
+
+| Mode | Grid | Mines |
+|------|------|-------|
+| Beginner | 9×9 | 10 |
+| Intermediate | 16×16 | 40 |
+| Expert | 16×30 | 99 |
+| Crash Out | 16×30 | 336 (~70%) |
+| Custom | any | any |
 
 ## Local development
 
@@ -29,6 +53,14 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ```bash
 npx supabase stop
+```
+
+## Regenerating screenshots
+
+With the dev server running:
+
+```bash
+npx playwright test scripts/screenshots.spec.ts
 ```
 
 ## Schema changes
