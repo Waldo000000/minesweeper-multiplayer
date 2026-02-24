@@ -1,9 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Grid from './grid';
 import { Coord, GameConfig, MinesweeperEvent, MinesweeperGame, State } from '../lib/minesweeper-game';
 import supabaseClient from '../lib/supabase-client';
-import { RealtimePostgresChangesPayload, RealtimePostgresInsertPayload } from '@supabase/supabase-js';
+import { RealtimePostgresInsertPayload } from '@supabase/supabase-js';
+import { GAME_MODES, GameMode, createNewGame } from '../lib/game-modes';
 
 interface GameProps {
     gameId: string;
@@ -20,8 +22,14 @@ type GameEventRecord = GameEventInsertRecord & {
 };
 
 const Game: React.FC<GameProps> = ({ gameId }) => {
+    const router = useRouter();
     const [minesweeperGame, setMinesweeperGame] = useState<MinesweeperGame | null>(null);
     const [state, setState] = useState<State | null>(null);
+
+    const handleSelectMode = async (mode: GameMode) => {
+        const newGameId = await createNewGame(mode.nRows, mode.nCols, mode.nMines);
+        router.push(`/game/${newGameId}`);
+    };
 
     useEffect(() => {
         const fetchGameConfigFromSupabase = async (gameId: string): Promise<GameConfig> => {
@@ -93,14 +101,18 @@ const Game: React.FC<GameProps> = ({ gameId }) => {
                 onRevealClick={minesweeperGame?.revealCell || (() => { })}
                 onToggleFlagClick={minesweeperGame?.toggleFlagCell || (() => { })}
             />
-            <div className="mt-4">
-                <a
-                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                    href="/game/new">
-                    New Game
-                </a>
+            <div className="mt-4 flex gap-2">
+                {GAME_MODES.map((mode) => (
+                    <button
+                        key={mode.key}
+                        onClick={() => handleSelectMode(mode)}
+                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                    >
+                        {mode.label}
+                    </button>
+                ))}
             </div>
-        </div >
+        </div>
     )
 }
 
