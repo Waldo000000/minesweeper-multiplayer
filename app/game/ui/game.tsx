@@ -31,9 +31,36 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
     const [customCols, setCustomCols] = useState('30');
     const [customMines, setCustomMines] = useState('99');
     const [nMines, setNMines] = useState(0);
+    const [startTime, setStartTime] = useState<number | null>(null);
+    const [elapsed, setElapsed] = useState(0);
 
-    const flaggedCount = (state?.board.flat() ?? []).filter(c => c.isFlagged).length;
+    const flatBoard = state?.board.flat() ?? [];
+    const flaggedCount = flatBoard.filter(c => c.isFlagged).length;
     const minesRemaining = nMines - flaggedCount;
+    const isGameLost = flatBoard.some(c => c.isMine && c.isRevealed);
+
+    // Reset timer when game changes
+    useEffect(() => {
+        setStartTime(null);
+        setElapsed(0);
+    }, [gameId]);
+
+    // Start timer on first reveal
+    useEffect(() => {
+        if (startTime !== null) return;
+        if (state?.board.flat().some(c => c.isRevealed)) {
+            setStartTime(Date.now());
+        }
+    }, [state, startTime]);
+
+    // Tick
+    useEffect(() => {
+        if (startTime === null || isGameLost) return;
+        const id = setInterval(() => setElapsed(Math.floor((Date.now() - startTime) / 1000)), 500);
+        return () => clearInterval(id);
+    }, [startTime, isGameLost]);
+
+    const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
     const handleSelectMode = async (mode: GameMode) => {
         if (onStartGame) {
@@ -152,6 +179,7 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
             </div>
             <div className="mb-2 flex gap-6 font-mono text-sm">
                 <span>💣 {minesRemaining}</span>
+                <span>⏱ {formatTime(elapsed)}</span>
             </div>
             <Grid
                 board={state?.board ?? []}
