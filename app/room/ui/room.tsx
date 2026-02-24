@@ -38,27 +38,40 @@ const Room: React.FC<{ roomId: string; initialGameId: string }> = ({ roomId, ini
         setPendingGameId(null);
     };
 
+    const [showQR, setShowQR] = useState(false);
     const roomUrl = typeof window !== 'undefined' ? window.location.href : '';
 
     return (
-        <div>
+        <div className="flex items-start gap-6">
+            <div className="min-w-0 flex-1">
+                {pendingGameId && (
+                    <div className="mt-2 flex items-center gap-3 rounded bg-yellow-100 px-4 py-2 text-yellow-800">
+                        <span>A new game has started</span>
+                        <button
+                            onClick={() => { setCurrentGameId(pendingGameId); setPendingGameId(null); }}
+                            className="font-bold underline hover:no-underline"
+                        >
+                            Follow →
+                        </button>
+                    </div>
+                )}
+                <Game gameId={currentGameId} onStartGame={handleStartGame} />
+            </div>
             {roomUrl && (
-                <div className="mb-4">
-                    <QRCodeSVG value={roomUrl} size={96} />
-                </div>
-            )}
-            {pendingGameId && (
-                <div className="mt-2 flex items-center gap-3 rounded bg-yellow-100 px-4 py-2 text-yellow-800">
-                    <span>A new game has started</span>
+                <div className="flex-shrink-0">
                     <button
-                        onClick={() => { setCurrentGameId(pendingGameId); setPendingGameId(null); }}
-                        className="font-bold underline hover:no-underline"
+                        onClick={() => setShowQR(v => !v)}
+                        className="rounded bg-blue-500 px-3 py-1.5 text-sm font-bold text-white hover:bg-blue-700"
                     >
-                        Follow →
+                        {showQR ? 'Hide QR' : 'Invite 📲'}
                     </button>
+                    {showQR && (
+                        <div className="mt-2 rounded-lg bg-white p-3 shadow-lg">
+                            <QRCodeSVG value={roomUrl} size={160} bgColor="#ffffff" fgColor="#000000" includeMargin />
+                        </div>
+                    )}
                 </div>
             )}
-            <Game gameId={currentGameId} onStartGame={handleStartGame} />
         </div>
     );
 };
