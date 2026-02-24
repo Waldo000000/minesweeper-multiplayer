@@ -25,9 +25,19 @@ const Game: React.FC<GameProps> = ({ gameId }) => {
     const router = useRouter();
     const [minesweeperGame, setMinesweeperGame] = useState<MinesweeperGame | null>(null);
     const [state, setState] = useState<State | null>(null);
+    const [showCustomForm, setShowCustomForm] = useState(false);
+    const [customRows, setCustomRows] = useState('16');
+    const [customCols, setCustomCols] = useState('30');
+    const [customMines, setCustomMines] = useState('99');
 
     const handleSelectMode = async (mode: GameMode) => {
         const newGameId = await createNewGame(mode.nRows, mode.nCols, mode.nMines);
+        router.push(`/game/${newGameId}`);
+    };
+
+    const handleCustomSubmit = async () => {
+        const newGameId = await createNewGame(Number(customRows), Number(customCols), Number(customMines));
+        setShowCustomForm(false);
         router.push(`/game/${newGameId}`);
     };
 
@@ -101,16 +111,36 @@ const Game: React.FC<GameProps> = ({ gameId }) => {
                 onRevealClick={minesweeperGame?.revealCell || (() => { })}
                 onToggleFlagClick={minesweeperGame?.toggleFlagCell || (() => { })}
             />
-            <div className="mt-4 flex gap-2">
+            <div className="mt-4 flex flex-wrap gap-2 items-center">
                 {GAME_MODES.map((mode) => (
                     <button
                         key={mode.key}
-                        onClick={() => handleSelectMode(mode)}
+                        onClick={() => { setShowCustomForm(false); handleSelectMode(mode); }}
                         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                     >
                         {mode.label}
                     </button>
                 ))}
+                <button
+                    onClick={() => setShowCustomForm((v) => !v)}
+                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                >
+                    Custom
+                </button>
+                {showCustomForm && (
+                    <>
+                        <input type="number" value={customRows} onChange={(e) => setCustomRows(e.target.value)}
+                            className="w-16 border rounded px-2 py-1 text-black bg-white" placeholder="Rows" />
+                        <input type="number" value={customCols} onChange={(e) => setCustomCols(e.target.value)}
+                            className="w-16 border rounded px-2 py-1 text-black bg-white" placeholder="Cols" />
+                        <input type="number" value={customMines} onChange={(e) => setCustomMines(e.target.value)}
+                            className="w-20 border rounded px-2 py-1 text-black bg-white" placeholder="Mines" />
+                        <button onClick={handleCustomSubmit}
+                            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                            Go
+                        </button>
+                    </>
+                )}
             </div>
         </div>
     )
