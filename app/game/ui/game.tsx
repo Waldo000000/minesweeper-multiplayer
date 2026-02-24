@@ -30,6 +30,10 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
     const [customRows, setCustomRows] = useState('16');
     const [customCols, setCustomCols] = useState('30');
     const [customMines, setCustomMines] = useState('99');
+    const [nMines, setNMines] = useState(0);
+
+    const flaggedCount = (state?.board.flat() ?? []).filter(c => c.isFlagged).length;
+    const minesRemaining = nMines - flaggedCount;
 
     const handleSelectMode = async (mode: GameMode) => {
         if (onStartGame) {
@@ -89,6 +93,7 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
 
         const fetchGameConfig = async () => {
             const config = await fetchGameConfigFromSupabase(gameId);
+            setNMines(config.nMines);
 
             const game = new MinesweeperGame(config, (state) => setState({ ...state }), event => publishToDatabase(event))
 
@@ -144,6 +149,9 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
                         </button>
                     </>
                 )}
+            </div>
+            <div className="mb-2 flex gap-6 font-mono text-sm">
+                <span>💣 {minesRemaining}</span>
             </div>
             <Grid
                 board={state?.board ?? []}
