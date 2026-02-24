@@ -1,36 +1,40 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Minesweeper Multiplayer
 
-## Getting Started
+A co-op multiplayer minesweeper game built with Next.js and Supabase. Share a game URL with friends to play together in real time.
 
-First, run the development server:
+## Local development
+
+**Prerequisites:** Docker (for the local Supabase stack)
+
+### 1. Start the local Supabase stack
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npx supabase start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+This starts Postgres, PostgREST, and the Realtime server via Docker. It applies migrations automatically on first run. The local API is at `http://127.0.0.1:54321`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`.env.local` is already configured for this local stack — no changes needed.
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+### 2. Start the app
 
-## Learn More
+```bash
+npm install
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+Open [http://localhost:3000](http://localhost:3000).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 3. Stop the local stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+```bash
+npx supabase stop
+```
 
-## Deploy on Vercel
+## Schema changes
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Add a new migration file under `supabase/migrations/` and restart (or run `npx supabase db reset` to reapply all migrations).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+## Deploying
+
+Point `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` at your Supabase project. Apply the migrations via the Supabase dashboard or CLI (`npx supabase db push`). Deploy the Next.js app anywhere (e.g. Vercel).
