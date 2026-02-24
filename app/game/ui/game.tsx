@@ -114,12 +114,7 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
 
     return (
         <div>
-            <Grid
-                board={state?.board ?? []}
-                onRevealClick={minesweeperGame?.revealCell || (() => { })}
-                onToggleFlagClick={minesweeperGame?.toggleFlagCell || (() => { })}
-            />
-            <div className="mt-4 flex flex-wrap gap-2 items-center">
+            <div className="mb-4 flex flex-wrap gap-2 items-center">
                 {GAME_MODES.map((mode) => (
                     <button
                         key={mode.key}
@@ -150,6 +145,11 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
                     </>
                 )}
             </div>
+            <Grid
+                board={state?.board ?? []}
+                onRevealClick={minesweeperGame?.revealCell || (() => { })}
+                onToggleFlagClick={minesweeperGame?.toggleFlagCell || (() => { })}
+            />
         </div>
     )
 }
