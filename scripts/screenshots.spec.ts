@@ -6,6 +6,24 @@ const DARK = { colorScheme: 'dark' as const, viewport: { width: 900, height: 700
 
 const waitForBoard = (page: Page) => page.waitForSelector('.cell');
 
+// Crop to the union bounding-box of all meaningful content elements
+const screenshotContent = async (page: Page, path: string) => {
+    const clip = await page.evaluate(() => {
+        let x1 = Infinity, y1 = Infinity, x2 = 0, y2 = 0;
+        document.querySelectorAll('button, input, .cell, svg').forEach(el => {
+            const r = el.getBoundingClientRect();
+            if (!r.width || !r.height) return;
+            x1 = Math.min(x1, r.left);
+            y1 = Math.min(y1, r.top);
+            x2 = Math.max(x2, r.right);
+            y2 = Math.max(y2, r.bottom);
+        });
+        const pad = 14;
+        return { x: Math.max(0, x1 - pad), y: Math.max(0, y1 - pad), width: x2 - x1 + pad * 2, height: y2 - y1 + pad * 2 };
+    });
+    await page.screenshot({ path, clip });
+};
+
 test.setTimeout(120_000);
 
 test.beforeAll(() => {
@@ -13,41 +31,38 @@ test.beforeAll(() => {
 });
 
 test('screenshots', async ({ browser }: { browser: Browser }) => {
-    // ── Page 1: create a room ──────────────────────────────────────────────
     const ctx1 = await browser.newContext(DARK);
     const p1 = await ctx1.newPage();
 
     await p1.goto('/room/new');
     await p1.waitForURL(/\/room\//);
     const roomUrl = p1.url();
-
     await waitForBoard(p1);
     await p1.waitForTimeout(300);
 
-    // 1. Fresh board
-    await p1.screenshot({ path: `${OUT}/01-fresh-board.png` });
+    // 1. Fresh board with QR open
+    await p1.getByText('Invite 📲').click();
+    await p1.waitForTimeout(200);
+    await screenshotContent(p1, `${OUT}/01-fresh-board.png`);
 
-    // Retry until we get a clearing (⬛ = empty cell with 0 neighbours)
+    // Hide QR before playing
+    await p1.getByText('Hide QR').click();
+
+    // Retry until we get a clearing (⬛ = empty revealed cell)
     let hasClear = false;
     for (let attempt = 0; attempt < 15 && !hasClear; attempt++) {
         if (attempt > 0) {
-            // Start a new beginner game and wait for fresh board
             await p1.getByText('Beginner').click();
             await p1.waitForTimeout(600);
             await waitForBoard(p1);
         }
-
-        // Click the centre cell of the 9×9 grid (index 40)
-        const cells = p1.locator('.cell');
-        await cells.nth(40).click();
+        await p1.locator('.cell').nth(40).click();
         await p1.waitForTimeout(600);
-
         hasClear = await p1.locator('.cell.revealed').filter({ hasText: '⬛' }).count() > 0;
     }
 
-    // Flag cells that are obviously mines: unrevealed neighbours of a number cell
-    // where the remaining unrevealed neighbour count equals the cell's number.
-    const obviousMineIndices = await p1.evaluate(() => {
+    // Flag cells that are obviously mines
+    const obviousMineIndices: number[] = await p1.evaluate(() => {
         const rows = Array.from(document.querySelectorAll('.row'));
         const nRows = rows.length;
         const nCols = rows[0]?.querySelectorAll('.cell').length ?? 0;
@@ -83,7 +98,7 @@ test('screenshots', async ({ browser }: { browser: Browser }) => {
     }
 
     // 2. Mid-game with clearing + flags
-    await p1.screenshot({ path: `${OUT}/02-mid-game.png` });
+    await screenshotContent(p1, `${OUT}/02-mid-game.png`);
 
     // ── Page 2: join the same room ─────────────────────────────────────────
     const ctx2 = await browser.newContext(DARK);
@@ -91,35 +106,12 @@ test('screenshots', async ({ browser }: { browser: Browser }) => {
     await p2.goto(roomUrl);
     await waitForBoard(p2);
 
-    // Page 1 starts a new game — page 2 should see the Follow banner
+    // Page 1 starts a new game; page 2 should see the Follow banner
     await p1.getByText('Beginner').first().click();
     await p2.waitForSelector('text=Follow →', { timeout: 15_000 });
 
-    // 3. Follow banner visible on page 2
-    await p2.screenshot({ path: `${OUT}/03-follow-banner.png` });
-
-    // Click Follow on page 2
-    await p2.getByText('Follow →').click();
-    await p2.waitForTimeout(600);
-
-    // 4. Both players on same new game (page 2 after following)
-    await p2.screenshot({ path: `${OUT}/04-after-follow.png` });
-
-    // ── Game over: Crash Out has ~70% mine density ─────────────────────────
-    await p1.getByText('Crash Out').click();
-    await p1.waitForTimeout(800);
-    await waitForBoard(p1);
-
-    for (let i = 0; i < 5; i++) {
-        const safe = p1.locator('.cell:not(.revealed):not(.flagged)');
-        if (await safe.count() === 0) break;
-        await safe.first().click();
-        await p1.waitForTimeout(400);
-        if (await p1.locator('.cell').filter({ hasText: '💥' }).count() > 0) break;
-    }
-
-    // 5. Game over state
-    await p1.screenshot({ path: `${OUT}/05-game-over.png` });
+    // 3. Follow banner on page 2
+    await screenshotContent(p2, `${OUT}/03-follow-banner.png`);
 
     await ctx1.close();
     await ctx2.close();

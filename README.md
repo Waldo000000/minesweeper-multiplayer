@@ -4,17 +4,14 @@ Co-op multiplayer Minesweeper. Share a room URL and play together — everyone s
 
 ## Screenshots
 
-**Fresh board**
+**Fresh board** — scan the QR code to invite someone to your room
 ![Fresh board](docs/screenshots/01-fresh-board.png)
 
 **Mid-game** — cleared region, numbered border, flags on deduced mines
 ![Mid-game](docs/screenshots/02-mid-game.png)
 
-**Multiplayer: follow notification** — when a player starts a new game, others see a banner
+**Multiplayer** — when a player starts a new game, others see a follow notification
 ![Follow banner](docs/screenshots/03-follow-banner.png)
-
-**Game over** — Crash Out mode (70% mine density)
-![Game over](docs/screenshots/05-game-over.png)
 
 ## Difficulty modes
 
