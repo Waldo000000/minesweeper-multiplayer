@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import Game from '../../game/ui/game';
 import supabaseClient from '../../game/lib/supabase-client';
 import { createNewGame } from '../../game/lib/game-modes';
@@ -37,8 +38,15 @@ const Room: React.FC<{ roomId: string; initialGameId: string }> = ({ roomId, ini
         setPendingGameId(null);
     };
 
+    const roomUrl = typeof window !== 'undefined' ? window.location.href : '';
+
     return (
         <div>
+            {roomUrl && (
+                <div className="mb-4">
+                    <QRCodeSVG value={roomUrl} size={96} />
+                </div>
+            )}
             {pendingGameId && (
                 <div className="mt-2 flex items-center gap-3 rounded bg-yellow-100 px-4 py-2 text-yellow-800">
                     <span>A new game has started</span>
