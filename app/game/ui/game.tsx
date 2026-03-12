@@ -38,6 +38,9 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
     const flaggedCount = flatBoard.filter(c => c.isFlagged).length;
     const minesRemaining = nMines - flaggedCount;
     const isGameLost = flatBoard.some(c => c.isMine && c.isRevealed);
+    const nonMineCells = flatBoard.filter(c => !c.isMine);
+    const isGameWon = !isGameLost && nonMineCells.length > 0 && nonMineCells.every(c => c.isRevealed);
+    const isGameOver = isGameLost || isGameWon;
 
     // Reset timer when game changes
     useEffect(() => {
@@ -55,10 +58,10 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
 
     // Tick
     useEffect(() => {
-        if (startTime === null || isGameLost) return;
+        if (startTime === null || isGameOver) return;
         const id = setInterval(() => setElapsed(Math.floor((Date.now() - startTime) / 1000)), 500);
         return () => clearInterval(id);
-    }, [startTime, isGameLost]);
+    }, [startTime, isGameOver]);
 
     const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
@@ -177,9 +180,11 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
                     </>
                 )}
             </div>
-            <div className="mb-2 flex gap-6 font-mono text-sm">
+            <div className={['mb-2 flex gap-6 font-mono text-sm items-center', isGameWon ? 'text-green-500' : isGameLost ? 'text-red-500' : ''].join(' ').trim()}>
                 <span>💣 {minesRemaining}</span>
                 <span>⏱ {formatTime(elapsed)}</span>
+                {isGameWon && <span className="font-bold">🎉 You won!</span>}
+                {isGameLost && <span className="font-bold">💥 Game over!</span>}
             </div>
             <Grid
                 board={state?.board ?? []}
