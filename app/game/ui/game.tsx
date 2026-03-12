@@ -1,11 +1,12 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Grid from './grid';
 import { Coord, GameConfig, MinesweeperEvent, MinesweeperGame, State } from '../lib/minesweeper-game';
 import supabaseClient from '../lib/supabase-client';
 import { RealtimePostgresInsertPayload } from '@supabase/supabase-js';
 import { GAME_MODES, GameMode, createNewGame } from '../lib/game-modes';
+import { BestTime, getBestTimes, saveBestTime } from '../lib/best-times';
 
 interface GameProps {
     gameId: string;
@@ -30,9 +31,13 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
     const [customRows, setCustomRows] = useState('16');
     const [customCols, setCustomCols] = useState('30');
     const [customMines, setCustomMines] = useState('99');
+    const [nRows, setNRows] = useState(0);
+    const [nCols, setNCols] = useState(0);
     const [nMines, setNMines] = useState(0);
     const [startTime, setStartTime] = useState<number | null>(null);
     const [elapsed, setElapsed] = useState(0);
+    const [bestTimes, setBestTimes] = useState<BestTime[]>([]);
+    const hasSavedBestTime = useRef(false);
 
     const flatBoard = state?.board.flat() ?? [];
     const flaggedCount = flatBoard.filter(c => c.isFlagged).length;
@@ -42,10 +47,11 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
     const isGameWon = !isGameLost && nonMineCells.length > 0 && nonMineCells.every(c => c.isRevealed);
     const isGameOver = isGameLost || isGameWon;
 
-    // Reset timer when game changes
+    // Reset timer and best-time save guard when game changes
     useEffect(() => {
         setStartTime(null);
         setElapsed(0);
+        hasSavedBestTime.current = false;
     }, [gameId]);
 
     // Start timer on first reveal
@@ -64,6 +70,14 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
     }, [startTime, isGameOver]);
 
     const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+
+    // Save best time when game is won
+    useEffect(() => {
+        if (!isGameWon || hasSavedBestTime.current || startTime === null || nRows === 0 || nCols === 0 || nMines === 0) return;
+        saveBestTime(nRows, nCols, nMines, elapsed);
+        hasSavedBestTime.current = true;
+        setBestTimes(getBestTimes(nRows, nCols, nMines));
+    }, [isGameWon, elapsed, startTime, nRows, nCols, nMines]);
 
     const handleSelectMode = async (mode: GameMode) => {
         if (onStartGame) {
@@ -124,6 +138,9 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
         const fetchGameConfig = async () => {
             const config = await fetchGameConfigFromSupabase(gameId);
             setNMines(config.nMines);
+            setNRows(config.nRows);
+            setNCols(config.nCols);
+            setBestTimes(getBestTimes(config.nRows, config.nCols, config.nMines));
 
             const game = new MinesweeperGame(config, (state) => setState({ ...state }), event => publishToDatabase(event))
 
@@ -191,6 +208,20 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
                 onRevealClick={minesweeperGame?.revealCell || (() => { })}
                 onToggleFlagClick={minesweeperGame?.toggleFlagCell || (() => { })}
             />
+            {nRows > 0 && (
+                <div className="mt-4 font-mono text-sm">
+                    <div className="font-bold mb-1">🏆 Best Times ({nRows}×{nCols}, {nMines} mines)</div>
+                    {bestTimes.length === 0 ? (
+                        <div className="text-gray-400">No times yet</div>
+                    ) : (
+                        <ol className="list-decimal list-inside space-y-0.5">
+                            {bestTimes.map((t, i) => (
+                                <li key={`${t.timeSeconds}-${t.date}-${i}`}>{formatTime(t.timeSeconds)} <span className="text-gray-400 text-xs">({t.date})</span></li>
+                            ))}
+                        </ol>
+                    )}
+                </div>
+            )}
         </div>
     )
 }
