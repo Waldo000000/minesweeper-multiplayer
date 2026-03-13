@@ -6,6 +6,7 @@ import { Coord, GameConfig, MinesweeperEvent, MinesweeperGame, State } from '../
 import supabaseClient from '../lib/supabase-client';
 import { RealtimePostgresInsertPayload } from '@supabase/supabase-js';
 import { GAME_MODES, GameMode, createNewGame } from '../lib/game-modes';
+import { BestTime, getBestTimes, saveBestTime } from '../lib/best-times';
 
 interface GameProps {
     gameId: string;
@@ -30,9 +31,12 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
     const [customRows, setCustomRows] = useState('16');
     const [customCols, setCustomCols] = useState('30');
     const [customMines, setCustomMines] = useState('99');
+    const [nRows, setNRows] = useState(0);
+    const [nCols, setNCols] = useState(0);
     const [nMines, setNMines] = useState(0);
     const [startTime, setStartTime] = useState<number | null>(null);
     const [elapsed, setElapsed] = useState(0);
+    const [bestTimes, setBestTimes] = useState<BestTime[]>([]);
 
     const flatBoard = state?.board.flat() ?? [];
     const flaggedCount = flatBoard.filter(c => c.isFlagged).length;
@@ -63,7 +67,14 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
         return () => clearInterval(id);
     }, [startTime, isGameOver]);
 
-    const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
+    // Save best time when game is won (fires once: isGameWon/startTime/config are stable per gameId)
+    useEffect(() => {
+        if (!isGameWon || startTime === null || nRows === 0 || nCols === 0 || nMines === 0) return;
+        saveBestTime(nRows, nCols, nMines, (Date.now() - startTime) / 1000);
+        setBestTimes(getBestTimes(nRows, nCols, nMines));
+    }, [isGameWon, startTime, nRows, nCols, nMines]);
 
     const handleSelectMode = async (mode: GameMode) => {
         if (onStartGame) {
@@ -124,6 +135,9 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
         const fetchGameConfig = async () => {
             const config = await fetchGameConfigFromSupabase(gameId);
             setNMines(config.nMines);
+            setNRows(config.nRows);
+            setNCols(config.nCols);
+            setBestTimes(getBestTimes(config.nRows, config.nCols, config.nMines));
 
             const game = new MinesweeperGame(config, (state) => setState({ ...state }), event => publishToDatabase(event))
 
@@ -191,6 +205,20 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
                 onRevealClick={minesweeperGame?.revealCell || (() => { })}
                 onToggleFlagClick={minesweeperGame?.toggleFlagCell || (() => { })}
             />
+            {nRows > 0 && (
+                <div className="mt-4 font-mono text-sm">
+                    <div className="font-bold mb-1">🏆 Best Times ({nRows}×{nCols}, {nMines} mines)</div>
+                    {bestTimes.length === 0 ? (
+                        <div className="text-gray-400">No times yet</div>
+                    ) : (
+                        <ol className="list-decimal list-inside space-y-0.5">
+                            {bestTimes.map((t, i) => (
+                                <li key={`${t.timeSeconds}-${t.date}-${i}`}>{formatTime(t.timeSeconds)} <span className="text-gray-400 text-xs">({t.date})</span></li>
+                            ))}
+                        </ol>
+                    )}
+                </div>
+            )}
         </div>
     )
 }
