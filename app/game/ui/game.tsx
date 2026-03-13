@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Grid from './grid';
 import { Coord, GameConfig, MinesweeperEvent, MinesweeperGame, State } from '../lib/minesweeper-game';
@@ -37,7 +37,6 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
     const [startTime, setStartTime] = useState<number | null>(null);
     const [elapsed, setElapsed] = useState(0);
     const [bestTimes, setBestTimes] = useState<BestTime[]>([]);
-    const hasSavedBestTime = useRef(false);
 
     const flatBoard = state?.board.flat() ?? [];
     const flaggedCount = flatBoard.filter(c => c.isFlagged).length;
@@ -47,11 +46,10 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
     const isGameWon = !isGameLost && nonMineCells.length > 0 && nonMineCells.every(c => c.isRevealed);
     const isGameOver = isGameLost || isGameWon;
 
-    // Reset timer and best-time save guard when game changes
+    // Reset timer when game changes
     useEffect(() => {
         setStartTime(null);
         setElapsed(0);
-        hasSavedBestTime.current = false;
     }, [gameId]);
 
     // Start timer on first reveal
@@ -69,15 +67,14 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
         return () => clearInterval(id);
     }, [startTime, isGameOver]);
 
-    const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 
-    // Save best time when game is won
+    // Save best time when game is won (fires once: isGameWon/startTime/config are stable per gameId)
     useEffect(() => {
-        if (!isGameWon || hasSavedBestTime.current || startTime === null || nRows === 0 || nCols === 0 || nMines === 0) return;
-        saveBestTime(nRows, nCols, nMines, elapsed);
-        hasSavedBestTime.current = true;
+        if (!isGameWon || startTime === null || nRows === 0 || nCols === 0 || nMines === 0) return;
+        saveBestTime(nRows, nCols, nMines, (Date.now() - startTime) / 1000);
         setBestTimes(getBestTimes(nRows, nCols, nMines));
-    }, [isGameWon, elapsed, startTime, nRows, nCols, nMines]);
+    }, [isGameWon, startTime, nRows, nCols, nMines]);
 
     const handleSelectMode = async (mode: GameMode) => {
         if (onStartGame) {
