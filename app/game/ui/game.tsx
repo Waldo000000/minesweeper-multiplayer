@@ -46,8 +46,9 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
     const isGameWon = !isGameLost && nonMineCells.length > 0 && nonMineCells.every(c => c.isRevealed);
     const isGameOver = isGameLost || isGameWon;
 
-    // Reset timer when game changes
+    // Reset timer and board state when game changes
     useEffect(() => {
+        setState(null);
         setStartTime(null);
         setElapsed(0);
     }, [gameId]);
