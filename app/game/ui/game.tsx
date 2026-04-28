@@ -164,6 +164,32 @@ const Game: React.FC<GameProps> = ({ gameId, onStartGame }) => {
 
     return (
         <div>
+            {isGameOver && (
+                <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center"
+                    style={{ background: isGameWon ? 'rgba(0,60,0,0.55)' : 'rgba(60,0,0,0.65)' }}>
+                    <div className="pointer-events-auto flex flex-col items-center gap-4 rounded-2xl px-10 py-8 shadow-2xl"
+                        style={{ background: isGameWon ? 'rgba(0,40,0,0.92)' : 'rgba(30,0,0,0.92)', border: `2px solid ${isGameWon ? '#22c55e' : '#ef4444'}` }}>
+                        <div className="text-7xl select-none">{isGameWon ? '🎉' : '💀'}</div>
+                        <div className={`text-3xl font-extrabold tracking-wide ${isGameWon ? 'text-green-400' : 'text-red-400'}`}>
+                            {isGameWon ? 'You won!' : 'Game over!'}
+                        </div>
+                        {isGameWon && startTime !== null && (
+                            <div className="text-green-300 font-mono text-lg">⏱ {formatTime(elapsed)}</div>
+                        )}
+                        <div className="mt-2 flex flex-wrap justify-center gap-2">
+                            {GAME_MODES.map((mode) => (
+                                <button
+                                    key={mode.key}
+                                    onClick={() => { setShowCustomForm(false); handleSelectMode(mode); }}
+                                    className={`font-bold py-2 px-4 rounded text-white ${isGameWon ? 'bg-green-600 hover:bg-green-500' : 'bg-red-700 hover:bg-red-500'}`}
+                                >
+                                    {mode.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
             <div className="mb-4 flex flex-wrap gap-2 items-center">
                 {GAME_MODES.map((mode) => (
                     <button
